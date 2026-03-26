@@ -1,0 +1,29 @@
+{
+  "name": "@psychedcms/admin-media",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "dependencies": {
+    "filerobot-image-editor": "^4.7.0",
+    "react-filerobot-image-editor": "^4.7.0",
+    "react-image-crop": "^11.0.0"
+  },
+  "peerDependencies": {
+    "@psychedcms/admin-core": "*",
+    "react": "^19.0.0",
+    "react-admin": "^5.0.0",
+    "react-dom": "^19.0.0",
+    "@mui/material": ">=6.0.0",
+    "@mui/icons-material": ">=6.0.0",
+    "ra-input-rich-text": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ra-input-rich-text": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
