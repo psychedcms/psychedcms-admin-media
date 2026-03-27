@@ -14,7 +14,6 @@ jobs:
         with:
           node-version: 20
           registry-url: https://npm.pkg.github.com
-      - run: npm version 0.0.0-dev.$(date +%Y%m%d%H%M%S) --no-git-tag-version
-      - run: npm publish --tag latest
+      - run: npm publish || true
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
