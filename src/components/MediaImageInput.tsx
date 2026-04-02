@@ -68,7 +68,6 @@ export function MediaImageInput({
 
     // Parse current field value
     const parsed = parseImageFieldValue(field.value);
-
     useEffect(() => {
         if (preview) return;
 
