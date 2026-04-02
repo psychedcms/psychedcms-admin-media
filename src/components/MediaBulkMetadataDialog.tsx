@@ -54,7 +54,7 @@ export function MediaBulkMetadataDialog({
             const response = await fetch(`${entrypoint}/media/bulk-update`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/ld+json',
+                    'Content-Type': 'application/json',
                     Accept: 'application/ld+json',
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
