@@ -86,6 +86,10 @@ export const enMessages = {
             file_size_warning_message: 'exceeds the recommended maximum size of %{maxSize}',
             upload_anyway: 'Upload anyway',
             max_size_hint: 'Max: %{size}',
+            manage_gallery: 'Manage gallery',
+            drag_to_reorder: 'Drag to reorder. First image is the cover.',
+            first_is_cover: 'First image = gallery cover',
+            no_images: 'No images. Add some to get started.',
         },
     },
 };

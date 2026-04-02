@@ -86,6 +86,10 @@ export const frMessages = {
             file_size_warning_message: 'dépasse la taille maximale recommandée de %{maxSize}',
             upload_anyway: 'Téléverser quand même',
             max_size_hint: 'Max : %{size}',
+            manage_gallery: 'Gérer la galerie',
+            drag_to_reorder: 'Glissez pour réordonner. La première image est la couverture.',
+            first_is_cover: 'Première image = couverture de la galerie',
+            no_images: 'Aucune image. Ajoutez-en pour commencer.',
         },
     },
 };

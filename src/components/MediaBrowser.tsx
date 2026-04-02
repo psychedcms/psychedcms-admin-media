@@ -42,6 +42,8 @@ interface MediaBrowserProps {
     multiSelect?: boolean;
     storage?: string;
     directory?: string;
+    /** IRIs of already-selected items (shown as pre-checked in multi-select mode) */
+    alreadySelectedIris?: string[];
 }
 
 const PER_PAGE = 24;
@@ -55,11 +57,15 @@ export function MediaBrowser({
     multiSelect = false,
     storage,
     directory,
+    alreadySelectedIris,
 }: MediaBrowserProps) {
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [selected, setSelected] = useState<Map<string, MediaRecord>>(new Map());
+
+    const isAlreadyPicked = (media: MediaRecord) =>
+        alreadySelectedIris?.includes(media['@id']) ?? false;
     const [sizeWarningOpen, setSizeWarningOpen] = useState(false);
     const [pendingFiles, setPendingFiles] = useState<File[]>([]);
     const { upload, uploading } = useMediaUpload();
@@ -242,22 +248,27 @@ export function MediaBrowser({
                     </Typography>
                 ) : viewMode === 'grid' ? (
                     <ImageList cols={4} rowHeight={140} gap={8}>
-                        {data.map((media) => (
+                        {data.map((media) => {
+                            const picked = isAlreadyPicked(media as MediaRecord);
+                            const checked = isSelected(media as MediaRecord);
+                            return (
                             <ImageListItem
                                 key={media.id}
                                 sx={{
-                                    cursor: 'pointer',
-                                    '&:hover': { opacity: 0.8 },
-                                    border: isSelected(media as MediaRecord) ? '2px solid' : '2px solid transparent',
-                                    borderColor: isSelected(media as MediaRecord) ? 'primary.main' : 'transparent',
+                                    cursor: picked ? 'default' : 'pointer',
+                                    opacity: picked ? 0.5 : 1,
+                                    '&:hover': { opacity: picked ? 0.5 : 0.8 },
+                                    border: (checked || picked) ? '2px solid' : '2px solid transparent',
+                                    borderColor: picked ? 'success.main' : checked ? 'primary.main' : 'transparent',
                                     borderRadius: 1,
                                     position: 'relative',
                                 }}
-                                onClick={() => handleItemClick(media as MediaRecord)}
+                                onClick={() => !picked && handleItemClick(media as MediaRecord)}
                             >
                                 {multiSelect && (
                                     <Checkbox
-                                        checked={isSelected(media as MediaRecord)}
+                                        checked={checked || picked}
+                                        disabled={picked}
                                         sx={{ position: 'absolute', top: 0, left: 0, zIndex: 1, bgcolor: 'rgba(255,255,255,0.7)' }}
                                         size="small"
                                     />
@@ -287,16 +298,24 @@ export function MediaBrowser({
                                     sx={{ '& .MuiImageListItemBar-title': { fontSize: '0.75rem' } }}
                                 />
                             </ImageListItem>
-                        ))}
+                            );
+                        })}
                     </ImageList>
                 ) : (
                     <List>
-                        {data.map((media) => (
-                            <ListItem key={media.id} disablePadding>
-                                <ListItemButton onClick={() => handleItemClick(media as MediaRecord)}>
+                        {data.map((media) => {
+                            const picked = isAlreadyPicked(media as MediaRecord);
+                            const checked = isSelected(media as MediaRecord);
+                            return (
+                            <ListItem key={media.id} disablePadding sx={{ opacity: picked ? 0.5 : 1 }}>
+                                <ListItemButton
+                                    onClick={() => !picked && handleItemClick(media as MediaRecord)}
+                                    disabled={picked}
+                                >
                                     {multiSelect && (
                                         <Checkbox
-                                            checked={isSelected(media as MediaRecord)}
+                                            checked={checked || picked}
+                                            disabled={picked}
                                             sx={{ mr: 1 }}
                                             size="small"
                                         />
@@ -319,7 +338,8 @@ export function MediaBrowser({
                                     />
                                 </ListItemButton>
                             </ListItem>
-                        ))}
+                            );
+                        })}
                     </List>
                 )}
 
