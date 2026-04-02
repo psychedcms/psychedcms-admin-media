@@ -54,28 +54,30 @@ export function FormatPreviewTabs({
         if (!crop || !canvasRef.current) return;
 
         const canvas = canvasRef.current;
-        // Compute display size: fit within max 400x300 at the target aspect ratio
         const ratio = targetW / targetH;
-        let displayW = Math.min(400, canvas.parentElement?.clientWidth ?? 400);
-        let displayH = displayW / ratio;
-        if (displayH > 300) {
-            displayH = 300;
-            displayW = displayH * ratio;
-        }
 
-        console.log('[FormatPreview] drawing crop', { currentName, crop, displayW, displayH, imageUrl });
+        const draw = () => {
+            const maxW = Math.min(400, 300 * ratio);
+            let displayW = Math.min(maxW, canvas.parentElement?.clientWidth ?? 0);
+            if (displayW === 0) {
+                requestAnimationFrame(draw);
+                return;
+            }
+            const displayH = displayW / ratio;
 
-        if (imgCacheRef.current?.complete && imgCacheRef.current.src === imageUrl) {
-            drawCrop(canvas, imgCacheRef.current, crop, displayW, displayH);
-        } else {
-            const img = new Image();
-            img.onload = () => {
-                imgCacheRef.current = img;
-                drawCrop(canvas, img, crop, displayW, displayH);
-            };
-            img.onerror = (e) => console.error('[FormatPreview] image load error', e);
-            img.src = imageUrl;
-        }
+            if (imgCacheRef.current?.complete && imgCacheRef.current.src === imageUrl) {
+                drawCrop(canvas, imgCacheRef.current, crop, displayW, displayH);
+            } else {
+                const img = new Image();
+                img.onload = () => {
+                    imgCacheRef.current = img;
+                    drawCrop(canvas, img, crop, displayW, displayH);
+                };
+                img.src = imageUrl;
+            }
+        };
+
+        draw();
     }, [crop, imageUrl, targetW, targetH, activeTab, currentName]);
 
     return (
@@ -106,8 +108,7 @@ export function FormatPreviewTabs({
                 sx={{
                     position: 'relative',
                     width: '100%',
-                    maxWidth: 400,
-                    maxHeight: 300,
+                    maxWidth: Math.min(400, 300 * (targetW / targetH)),
                     aspectRatio: `${targetW} / ${targetH}`,
                     overflow: 'hidden',
                     bgcolor: 'grey.100',
@@ -119,7 +120,7 @@ export function FormatPreviewTabs({
                 {crop ? (
                     <canvas
                         ref={canvasRef}
-                        style={{ width: '100%', height: '100%', display: 'block' }}
+                        style={{ maxWidth: '100%', display: 'block' }}
                     />
                 ) : (
                     <>

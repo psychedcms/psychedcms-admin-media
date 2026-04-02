@@ -10,12 +10,17 @@ import {
     CardActions,
     Typography,
     CircularProgress,
+    Dialog,
+    DialogContent,
+    Divider,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CropIcon from '@mui/icons-material/Crop';
 import EditIcon from '@mui/icons-material/Edit';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import CloseIcon from '@mui/icons-material/Close';
 import { MediaBrowser } from './MediaBrowser.tsx';
 import { MediaFormatCropper } from './MediaFormatCropper.tsx';
 import { FormatPreviewTabs } from './FormatPreviewTabs.tsx';
@@ -53,6 +58,7 @@ export function MediaImageInput({
     const [cropperOpen, setCropperOpen] = useState(false);
     const [cropInitialStep, setCropInitialStep] = useState(0);
     const [editorOpen, setEditorOpen] = useState(false);
+    const [detailOpen, setDetailOpen] = useState(false);
     const [sizeWarningOpen, setSizeWarningOpen] = useState(false);
     const [pendingFile, setPendingFile] = useState<File | null>(null);
     const [cropFormats, setCropFormats] = useState<Record<string, CropCoords> | undefined>();
@@ -70,14 +76,15 @@ export function MediaImageInput({
 
     // Parse current field value
     const parsed = parseImageFieldValue(field.value);
+
     // Sync cropFormats from parsed value when loading existing data
     useEffect(() => {
         if (parsed?.formats && !cropFormats) {
             setCropFormats(parsed.formats);
         }
     }, [parsed?.formats, cropFormats]);
+
     useEffect(() => {
-        console.log('[MII]', source, { hasPreview: !!preview, valueType: typeof field.value, value: field.value });
         if (preview) return;
 
         const value = field.value;
@@ -213,7 +220,6 @@ export function MediaImageInput({
             if (iri) {
                 field.onChange(buildImageFieldValue(iri, formats));
             } else if (typeof field.value === 'object' && field.value != null) {
-                // Legacy image field without @id (e.g., {url: '...', alt: '...'})
                 field.onChange({ ...field.value, formats });
             }
             setCropFormats(formats);
@@ -226,29 +232,6 @@ export function MediaImageInput({
         setPreview(null);
         setCropFormats(undefined);
     }, [field]);
-
-    const handleAltTextChange = useCallback(
-        async (event: React.ChangeEvent<HTMLInputElement>) => {
-            const newAltText = event.target.value;
-            setPreview((prev) => (prev ? { ...prev, altText: newAltText } : null));
-
-            if (field.value) {
-                try {
-                    const iri = parsed?.iri;
-                    if (iri) {
-                        await dataProvider.update('media', {
-                            id: iri,
-                            data: { altText: newAltText },
-                            previousData: { id: iri },
-                        });
-                    }
-                } catch {
-                    // Silent fail
-                }
-            }
-        },
-        [field.value, parsed, dataProvider],
-    );
 
     const hasValue = field.value != null && field.value !== '';
     const fieldAllowedTypes = meta?.allowedTypes as string[] | undefined;
@@ -265,27 +248,21 @@ export function MediaImageInput({
 
             {hasValue && preview ? (
                 <Card variant="outlined" sx={{ maxWidth: 400 }}>
-                    <CardMedia
-                        component="img"
-                        image={preview.thumbnailUrl || preview.url}
-                        alt={preview.altText ?? ''}
-                        sx={{ height: 200, objectFit: 'contain', bgcolor: 'grey.100' }}
-                    />
-                    <Box sx={{ p: 1 }}>
-                        <TextField
-                            size="small"
-                            fullWidth
-                            label={translate('psyched.media.alt_text')}
-                            value={preview.altText ?? ''}
-                            onChange={handleAltTextChange}
-                            variant="outlined"
-                            sx={{ mb: 1 }}
+                    {/* Compact header: thumbnail + filename + info */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1 }}>
+                        <Box
+                            component="img"
+                            src={preview.thumbnailUrl || preview.url}
+                            alt={preview.altText ?? ''}
+                            sx={{ width: 40, height: 40, borderRadius: 0.5, objectFit: 'cover', flexShrink: 0, cursor: 'pointer' }}
+                            onClick={() => setDetailOpen(true)}
                         />
-                        {preview.originalFilename && (
-                            <Typography variant="caption" color="textSecondary">
-                                {preview.originalFilename}
-                            </Typography>
-                        )}
+                        <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0 }}>
+                            {preview.originalFilename || translate('psyched.media.details')}
+                        </Typography>
+                        <IconButton size="small" onClick={() => setDetailOpen(true)} title={translate('psyched.media.details')}>
+                            <InfoOutlinedIcon fontSize="small" />
+                        </IconButton>
                     </Box>
 
                     {/* Format previews */}
@@ -300,6 +277,25 @@ export function MediaImageInput({
                             }}
                         />
                     )}
+
+                    <Box sx={{ px: 1, pb: 1 }}>
+                        <TextField
+                            size="small"
+                            fullWidth
+                            label={translate('psyched.media.alt_text')}
+                            placeholder={preview.altText || ''}
+                            value={
+                                (typeof field.value === 'object' && field.value?.alt) || ''
+                            }
+                            onChange={(e) => {
+                                const newAlt = e.target.value;
+                                if (typeof field.value === 'object' && field.value != null) {
+                                    field.onChange({ ...field.value, alt: newAlt || undefined });
+                                }
+                            }}
+                            variant="outlined"
+                        />
+                    </Box>
 
                     <CardActions>
                         <Button
@@ -320,15 +316,6 @@ export function MediaImageInput({
                             >
                                 {translate('psyched.media.recrop')}
                             </Button>
-                        )}
-                        {preview.url && (
-                            <IconButton
-                                size="small"
-                                onClick={() => setEditorOpen(true)}
-                                title={translate('psyched.media.edit_image')}
-                            >
-                                <EditIcon fontSize="small" />
-                            </IconButton>
                         )}
                         <IconButton size="small" color="error" onClick={handleRemove}>
                             <DeleteIcon />
@@ -408,6 +395,52 @@ export function MediaImageInput({
                     imageUrl={preview.url}
                     originalFilename={preview.originalFilename}
                 />
+            )}
+
+            {/* Media detail dialog */}
+            {preview && (
+                <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="xs" fullWidth>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, pt: 1.5 }}>
+                        <Typography variant="subtitle2">{translate('psyched.media.details')}</Typography>
+                        <IconButton size="small" onClick={() => setDetailOpen(false)}>
+                            <CloseIcon fontSize="small" />
+                        </IconButton>
+                    </Box>
+                    <DialogContent sx={{ pt: 1 }}>
+                        <Box sx={{ borderRadius: 1, overflow: 'hidden', bgcolor: 'action.hover', mb: 1.5 }}>
+                            <CardMedia
+                                component="img"
+                                image={preview.url}
+                                alt={preview.altText ?? ''}
+                                sx={{ maxHeight: 300, objectFit: 'contain' }}
+                            />
+                        </Box>
+                        {preview.originalFilename && (
+                            <Typography variant="subtitle2" noWrap sx={{ mb: 0.25 }}>
+                                {preview.originalFilename}
+                            </Typography>
+                        )}
+                        {preview.url && parsed?.iri && (
+                            <Button
+                                variant="outlined"
+                                startIcon={<EditIcon />}
+                                size="small"
+                                onClick={() => { setDetailOpen(false); setEditorOpen(true); }}
+                                fullWidth
+                                sx={{ my: 1.5 }}
+                            >
+                                {translate('psyched.media.edit_image')}
+                            </Button>
+                        )}
+                        <Divider sx={{ mb: 1.5 }} />
+                        <Typography variant="caption" color="textSecondary">
+                            {translate('psyched.media.alt_text')}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                            {preview.altText || '—'}
+                        </Typography>
+                    </DialogContent>
+                </Dialog>
             )}
 
             <FileSizeWarningDialog
