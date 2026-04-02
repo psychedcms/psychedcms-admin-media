@@ -244,13 +244,25 @@ export function MediaImageListInput({
             const { active, over } = event;
             if (!over || active.id === over.id) return;
 
-            const oldIndex = iris.indexOf(active.id as string);
-            const newIndex = iris.indexOf(over.id as string);
+            const oldIndex = previews.findIndex((p) => p.iri === active.id);
+            const newIndex = previews.findIndex((p) => p.iri === over.id);
             if (oldIndex === -1 || newIndex === -1) return;
 
-            updateField(arrayMove(iris, oldIndex, newIndex), arrayMove(previews, oldIndex, newIndex));
+            const newPreviews = arrayMove(previews, oldIndex, newIndex);
+            // Rebuild field value from reordered previews
+            const newValue = newPreviews.map((p) => {
+                // IRI items: return the IRI string
+                const iriMatch = iris.find((iri) => iri === p.iri);
+                if (iriMatch) return iriMatch;
+                // Object items: find matching object in rawItems
+                return rawItems.find((raw) =>
+                    typeof raw === 'object' && raw !== null && 'url' in raw && (raw as Record<string, unknown>).url === p.url
+                ) ?? p.iri;
+            });
+            field.onChange(newValue.length > 0 ? newValue : null);
+            setPreviews(newPreviews);
         },
-        [iris, previews, updateField],
+        [previews, iris, rawItems, field],
     );
 
     const doUploadFiles = useCallback(
@@ -349,9 +361,10 @@ export function MediaImageListInput({
 
     const handleRemove = useCallback(
         (index: number) => {
-            const newIris = iris.filter((_, i) => i !== index);
             const newPreviews = previews.filter((_, i) => i !== index);
-            updateField(newIris, newPreviews);
+            const newRawItems = rawItems.filter((_, i) => i !== index);
+            field.onChange(newRawItems.length > 0 ? newRawItems : null);
+            setPreviews(newPreviews);
         },
         [iris, previews, updateField],
     );
@@ -400,7 +413,7 @@ export function MediaImageListInput({
                         </Typography>
                     )}
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                        <SortableContext items={iris} strategy={verticalListSortingStrategy}>
+                        <SortableContext items={previews.map((p) => p.iri)} strategy={verticalListSortingStrategy}>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                                 {previews.map((item, index) => (
                                     <SortablePhoto
