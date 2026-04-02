@@ -1,5 +1,5 @@
 import { useInput, useDataProvider, useTranslate, useNotify } from 'react-admin';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
     Box,
     Button,
@@ -178,24 +178,42 @@ export function MediaImageListInput({
     const [sizeWarningOpen, setSizeWarningOpen] = useState(false);
     const [pendingFiles, setPendingFiles] = useState<{ valid: File[]; oversized: File[] }>({ valid: [], oversized: [] });
 
-    // field.value may contain IRI strings ("/api/media/...") or legacy objects ({filename, alt}).
-    // Only keep valid IRI strings for media resolution.
-    const iris: string[] = Array.isArray(field.value)
-        ? field.value.filter((v): v is string => typeof v === 'string')
-        : [];
-    const maxReached = meta?.max != null && iris.length >= meta.max;
+    // field.value may contain:
+    // - IRI strings ("/api/media/...") from media picker
+    // - Media objects ({url, alt, storagePath, mimeType}) from API read
+    const rawItems: unknown[] = Array.isArray(field.value) ? field.value : [];
+    const iris: string[] = rawItems.filter((v): v is string => typeof v === 'string');
+    const objectItems = useMemo(() => rawItems
+        .filter((v): v is Record<string, unknown> => typeof v === 'object' && v !== null && 'url' in v)
+        .map((obj, i) => ({
+            iri: (obj.url as string) ?? `object-${i}`,
+            url: obj.url as string | undefined,
+            thumbnailUrl: obj.url as string | undefined,
+            originalFilename: (obj.alt as string) || (obj.storagePath as string)?.split('/').pop() || undefined,
+        })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [field.value]);
+    const totalCount = iris.length + objectItems.length;
+    const maxReached = meta?.max != null && totalCount >= meta.max;
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     );
 
     useEffect(() => {
-        if (loaded || iris.length === 0) return;
+        if (loaded) return;
+
+        // Object items don't need fetching — set previews directly
+        if (iris.length === 0) {
+            if (objectItems.length > 0) setPreviews(objectItems);
+            setLoaded(true);
+            return;
+        }
 
         dataProvider
             .getMany('media', { ids: iris })
             .then(({ data }) => {
-                const items: PreviewItem[] = iris.map((iri) => {
+                const iriPreviews: PreviewItem[] = iris.map((iri) => {
                     const media = data.find((d: Record<string, unknown>) => d['@id'] === iri || d.id === iri);
                     return {
                         iri,
@@ -204,13 +222,14 @@ export function MediaImageListInput({
                         originalFilename: media?.originalFilename as string | undefined,
                     };
                 });
-                setPreviews(items);
+                setPreviews([...objectItems, ...iriPreviews]);
                 setLoaded(true);
             })
             .catch(() => {
+                setPreviews(objectItems);
                 setLoaded(true);
             });
-    }, [iris, loaded, dataProvider]);
+    }, [iris, objectItems, loaded, dataProvider]);
 
     const updateField = useCallback(
         (newIris: string[], newPreviews: PreviewItem[]) => {
