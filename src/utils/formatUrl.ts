@@ -31,16 +31,20 @@ export function buildCroppedUrl(
 /**
  * Parse a field value that may be a simple IRI string or an object with formats.
  */
-export function parseImageFieldValue(value: unknown): { iri: string; formats?: Record<string, CropCoords> } | null {
+export function parseImageFieldValue(value: unknown): { iri: string | undefined; formats?: Record<string, CropCoords> } | null {
     if (!value) return null;
 
     if (typeof value === 'string') {
         return { iri: value };
     }
 
-    if (typeof value === 'object' && value !== null && '@id' in value) {
-        const obj = value as ImageFieldValue;
-        return { iri: obj['@id'], formats: obj.formats };
+    if (typeof value === 'object' && value !== null) {
+        const obj = value as Record<string, unknown>;
+        const iri = (obj['@id'] as string) || undefined;
+        const formats = obj.formats as Record<string, CropCoords> | undefined;
+        if (iri || formats) {
+            return { iri, formats };
+        }
     }
 
     return null;

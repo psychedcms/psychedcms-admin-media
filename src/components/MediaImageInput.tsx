@@ -10,7 +10,6 @@ import {
     CardActions,
     Typography,
     CircularProgress,
-    Chip,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
@@ -19,6 +18,7 @@ import CropIcon from '@mui/icons-material/Crop';
 import EditIcon from '@mui/icons-material/Edit';
 import { MediaBrowser } from './MediaBrowser.tsx';
 import { MediaFormatCropper } from './MediaFormatCropper.tsx';
+import { FormatPreviewTabs } from './FormatPreviewTabs.tsx';
 import { MediaImageEditorDialog } from './MediaImageEditorDialog.tsx';
 import { FileSizeWarningDialog } from './FileSizeWarningDialog.tsx';
 import { useMediaUpload } from '../hooks/useMediaUpload.ts';
@@ -51,9 +51,11 @@ export function MediaImageInput({
 
     const [browserOpen, setBrowserOpen] = useState(false);
     const [cropperOpen, setCropperOpen] = useState(false);
+    const [cropInitialStep, setCropInitialStep] = useState(0);
     const [editorOpen, setEditorOpen] = useState(false);
     const [sizeWarningOpen, setSizeWarningOpen] = useState(false);
     const [pendingFile, setPendingFile] = useState<File | null>(null);
+    const [cropFormats, setCropFormats] = useState<Record<string, CropCoords> | undefined>();
     const [preview, setPreview] = useState<{
         url?: string;
         thumbnailUrl?: string;
@@ -68,7 +70,14 @@ export function MediaImageInput({
 
     // Parse current field value
     const parsed = parseImageFieldValue(field.value);
+    // Sync cropFormats from parsed value when loading existing data
     useEffect(() => {
+        if (parsed?.formats && !cropFormats) {
+            setCropFormats(parsed.formats);
+        }
+    }, [parsed?.formats, cropFormats]);
+    useEffect(() => {
+        console.log('[MII]', source, { hasPreview: !!preview, valueType: typeof field.value, value: field.value });
         if (preview) return;
 
         const value = field.value;
@@ -203,7 +212,11 @@ export function MediaImageInput({
             const iri = parsed?.iri || (typeof field.value === 'string' ? field.value : field.value?.['@id']);
             if (iri) {
                 field.onChange(buildImageFieldValue(iri, formats));
+            } else if (typeof field.value === 'object' && field.value != null) {
+                // Legacy image field without @id (e.g., {url: '...', alt: '...'})
+                field.onChange({ ...field.value, formats });
             }
+            setCropFormats(formats);
         },
         [field, parsed],
     );
@@ -211,6 +224,7 @@ export function MediaImageInput({
     const handleRemove = useCallback(() => {
         field.onChange(null);
         setPreview(null);
+        setCropFormats(undefined);
     }, [field]);
 
     const handleAltTextChange = useCallback(
@@ -275,25 +289,16 @@ export function MediaImageInput({
                     </Box>
 
                     {/* Format previews */}
-                    {hasDimensions && parsed?.formats && (
-                        <Box sx={{ px: 1, pb: 1 }}>
-                            <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 0.5 }}>
-                                {translate('psyched.media.format_crop')} :
-                            </Typography>
-                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                                {Object.entries(dimensions!).map(([name, [w, h]]) => (
-                                    <Chip
-                                        key={name}
-                                        size="small"
-                                        label={`${name} (${w}x${h})`}
-                                        color={parsed.formats?.[name] ? 'primary' : 'default'}
-                                        variant={parsed.formats?.[name] ? 'filled' : 'outlined'}
-                                        onClick={() => setCropperOpen(true)}
-                                        icon={<CropIcon />}
-                                    />
-                                ))}
-                            </Box>
-                        </Box>
+                    {hasDimensions && preview?.url && (
+                        <FormatPreviewTabs
+                            dimensions={dimensions!}
+                            formats={cropFormats ?? parsed?.formats}
+                            imageUrl={preview.url}
+                            onRecropFormat={(step) => {
+                                setCropInitialStep(step);
+                                setCropperOpen(true);
+                            }}
+                        />
                     )}
 
                     <CardActions>
@@ -308,7 +313,10 @@ export function MediaImageInput({
                             <Button
                                 size="small"
                                 startIcon={<CropIcon />}
-                                onClick={() => setCropperOpen(true)}
+                                onClick={() => {
+                                    setCropInitialStep(0);
+                                    setCropperOpen(true);
+                                }}
                             >
                                 {translate('psyched.media.recrop')}
                             </Button>
@@ -388,6 +396,7 @@ export function MediaImageInput({
                     dimensions={dimensions!}
                     existingFormats={parsed?.formats}
                     onComplete={handleCropComplete}
+                    initialStep={cropInitialStep}
                 />
             )}
 

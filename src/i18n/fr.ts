@@ -78,6 +78,8 @@ export const frMessages = {
             prev_format: 'Format précédent',
             validate_crops: 'Valider tous les recadrages',
             recrop: 'Recadrer',
+            recrop_format: 'Recadrer ce format',
+            no_crop_defined: 'Pas encore recadré',
             details: 'Détails',
             file_type_not_allowed: 'Ce type de fichier n\'est pas autorisé',
             file_size_warning_title: 'Avertissement de taille',

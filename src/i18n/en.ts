@@ -78,6 +78,8 @@ export const enMessages = {
             prev_format: 'Previous format',
             validate_crops: 'Validate all crops',
             recrop: 'Re-crop',
+            recrop_format: 'Re-crop this format',
+            no_crop_defined: 'Not cropped yet',
             details: 'Details',
             file_type_not_allowed: 'This file type is not allowed',
             file_size_warning_title: 'File size warning',
