@@ -39,7 +39,7 @@ export function MediaBulkActions({
     const getAuthHeaders = useCallback(() => {
         const token = localStorage.getItem('token');
         return {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/ld+json',
             Accept: 'application/ld+json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
         };
