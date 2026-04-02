@@ -51,7 +51,7 @@ export function MediaBulkActions({
             const response = await fetch(`${entrypoint}/media/bulk-delete`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ ids: selectedIds }),
+                body: JSON.stringify({ ids: selectedIds.map((id) => id.replace(/^\/api\/media\//, '')) }),
             });
 
             if (!response.ok) {

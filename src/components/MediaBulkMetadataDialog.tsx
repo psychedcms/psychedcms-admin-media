@@ -58,7 +58,7 @@ export function MediaBulkMetadataDialog({
                     Accept: 'application/ld+json',
                     ...(token ? { Authorization: `Bearer ${token}` } : {}),
                 },
-                body: JSON.stringify({ ids: selectedIds, ...data }),
+                body: JSON.stringify({ ids: selectedIds.map((id) => id.replace(/^\/api\/media\//, '')), ...data }),
             });
 
             if (!response.ok) {
