@@ -40,7 +40,7 @@ export function MediaBulkActions({
         const token = localStorage.getItem('token');
         return {
             'Content-Type': 'application/json',
-            Accept: 'application/ld+json',
+            Accept: 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
         };
     }, []);
@@ -48,10 +48,11 @@ export function MediaBulkActions({
     const handleBulkDelete = useCallback(async () => {
         setDeleting(true);
         try {
+            const ids = selectedIds.map((id) => String(id).replace(/^\/api\/media\//, ''));
             const response = await fetch(`${entrypoint}/media/bulk-delete`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ ids: selectedIds.map((id) => id.replace(/^\/api\/media\//, '')) }),
+                body: JSON.stringify({ ids }),
             });
 
             if (!response.ok) {
