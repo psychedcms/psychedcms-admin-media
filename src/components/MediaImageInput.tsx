@@ -66,6 +66,7 @@ export function MediaImageInput({
         url?: string;
         thumbnailUrl?: string;
         altText?: string;
+        credits?: string;
         originalFilename?: string;
     } | null>(null);
 
@@ -98,6 +99,7 @@ export function MediaImageInput({
                     url: value.url,
                     thumbnailUrl: value.thumbnailUrl,
                     altText: value.altText,
+                    credits: value.credits,
                     originalFilename: value.originalFilename,
                 });
                 return;
@@ -111,6 +113,7 @@ export function MediaImageInput({
                             url: data.url,
                             thumbnailUrl: data.thumbnailUrl,
                             altText: data.altText,
+                            credits: data.credits,
                             originalFilename: data.originalFilename,
                         });
                     })
@@ -127,6 +130,7 @@ export function MediaImageInput({
                         url: data.url,
                         thumbnailUrl: data.thumbnailUrl,
                         altText: data.altText,
+                        credits: data.credits,
                         originalFilename: data.originalFilename,
                     });
                 })
@@ -142,6 +146,7 @@ export function MediaImageInput({
                     url: media.url,
                     thumbnailUrl: media.thumbnailUrl,
                     altText: media.altText,
+                    credits: media.credits,
                     originalFilename: media.originalFilename,
                 });
 
@@ -200,6 +205,7 @@ export function MediaImageInput({
                 url: media.url,
                 thumbnailUrl: media.thumbnailUrl,
                 altText: media.altText,
+                credits: media.credits,
                 originalFilename: media.originalFilename,
             });
             setBrowserOpen(false);
@@ -278,7 +284,7 @@ export function MediaImageInput({
                         />
                     )}
 
-                    <Box sx={{ px: 1, pb: 1 }}>
+                    <Box sx={{ px: 1, pb: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
                         <TextField
                             size="small"
                             fullWidth
@@ -291,6 +297,22 @@ export function MediaImageInput({
                                 const newAlt = e.target.value;
                                 if (typeof field.value === 'object' && field.value != null) {
                                     field.onChange({ ...field.value, alt: newAlt || undefined });
+                                }
+                            }}
+                            variant="outlined"
+                        />
+                        <TextField
+                            size="small"
+                            fullWidth
+                            label={translate('psyched.media.credits')}
+                            placeholder={preview.credits || ''}
+                            value={
+                                (typeof field.value === 'object' && field.value?.credits) || ''
+                            }
+                            onChange={(e) => {
+                                const newCredits = e.target.value;
+                                if (typeof field.value === 'object' && field.value != null) {
+                                    field.onChange({ ...field.value, credits: newCredits || undefined });
                                 }
                             }}
                             variant="outlined"
@@ -438,6 +460,12 @@ export function MediaImageInput({
                         </Typography>
                         <Typography variant="body2" sx={{ mb: 1 }}>
                             {preview.altText || '—'}
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary">
+                            {translate('psyched.media.credits')}
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                            {preview.credits || '—'}
                         </Typography>
                     </DialogContent>
                 </Dialog>

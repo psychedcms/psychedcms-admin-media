@@ -8,6 +8,7 @@ export interface MediaRecord {
     url: string;
     thumbnailUrl?: string;
     altText?: string;
+    credits?: string;
     title?: string;
     description?: string;
     originalFilename?: string;

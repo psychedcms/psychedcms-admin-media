@@ -28,6 +28,8 @@ export function MediaBulkMetadataDialog({
 }: MediaBulkMetadataDialogProps) {
     const [altText, setAltText] = useState('');
     const [applyAltText, setApplyAltText] = useState(false);
+    const [credits, setCredits] = useState('');
+    const [applyCredits, setApplyCredits] = useState(false);
     const [title, setTitle] = useState('');
     const [applyTitle, setApplyTitle] = useState(false);
     const [description, setDescription] = useState('');
@@ -40,6 +42,7 @@ export function MediaBulkMetadataDialog({
     const handleSave = useCallback(async () => {
         const data: Record<string, string> = {};
         if (applyAltText) data.altText = altText;
+        if (applyCredits) data.credits = credits;
         if (applyTitle) data.title = title;
         if (applyDescription) data.description = description;
 
@@ -78,6 +81,7 @@ export function MediaBulkMetadataDialog({
         }
     }, [
         applyAltText, altText,
+        applyCredits, credits,
         applyTitle, title,
         applyDescription, description,
         selectedIds, entrypoint, notify, onComplete,
@@ -86,6 +90,8 @@ export function MediaBulkMetadataDialog({
     const handleClose = useCallback(() => {
         setAltText('');
         setApplyAltText(false);
+        setCredits('');
+        setApplyCredits(false);
         setTitle('');
         setApplyTitle(false);
         setDescription('');
@@ -116,6 +122,26 @@ export function MediaBulkMetadataDialog({
                             value={altText}
                             onChange={(e) => setAltText(e.target.value)}
                             disabled={!applyAltText}
+                        />
+                    </Box>
+                    <Box>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={applyCredits}
+                                    onChange={(e) => setApplyCredits(e.target.checked)}
+                                    size="small"
+                                />
+                            }
+                            label="Apply to all selected"
+                        />
+                        <TextField
+                            fullWidth
+                            size="small"
+                            label="Credits"
+                            value={credits}
+                            onChange={(e) => setCredits(e.target.value)}
+                            disabled={!applyCredits}
                         />
                     </Box>
                     <Box>
@@ -167,7 +193,7 @@ export function MediaBulkMetadataDialog({
                 <Button
                     variant="contained"
                     onClick={handleSave}
-                    disabled={saving || (!applyAltText && !applyTitle && !applyDescription)}
+                    disabled={saving || (!applyAltText && !applyCredits && !applyTitle && !applyDescription)}
                 >
                     Save
                 </Button>

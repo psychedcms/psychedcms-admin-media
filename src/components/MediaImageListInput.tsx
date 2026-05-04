@@ -15,6 +15,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import CollectionsIcon from '@mui/icons-material/Collections';
 import StarIcon from '@mui/icons-material/Star';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import {
     DndContext,
     closestCenter,
@@ -443,8 +445,9 @@ export function MediaImageListInput({
         </>
     );
 
-    // Compact inline preview: up to 4 small thumbnails
-    const inlinePreviews = previews.slice(0, 4);
+    // Compact inline preview: carousel
+    const [carouselIndex, setCarouselIndex] = useState(0);
+    const safeIndex = Math.min(carouselIndex, Math.max(0, previews.length - 1));
 
     return (
         <Box sx={{ mb: 2 }}>
@@ -466,46 +469,62 @@ export function MediaImageListInput({
                         {required && ' *'}
                     </Typography>
 
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        {inlinePreviews.length > 0 && (
-                            <Box sx={{ display: 'flex', gap: 0.5 }}>
-                                {inlinePreviews.map((item, i) => (
-                                    <Box
-                                        key={item.iri}
-                                        sx={{
-                                            width: 40,
-                                            height: 40,
-                                            borderRadius: 1,
-                                            overflow: 'hidden',
-                                            border: '1px solid',
-                                            borderColor: 'divider',
-                                            position: 'relative',
-                                        }}
-                                    >
-                                        <img
-                                            src={item.thumbnailUrl || item.url || ''}
-                                            alt=""
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                        />
-                                        {i === 0 && previews.length > 1 && (
-                                            <StarIcon sx={{ position: 'absolute', bottom: 0, left: 0, fontSize: 12, color: '#f59e0b' }} />
-                                        )}
-                                    </Box>
-                                ))}
+                    {previews.length > 0 ? (
+                        <Box>
+                            <Box sx={{ position: 'relative', maxWidth: 400, aspectRatio: '3 / 2', borderRadius: 1, overflow: 'hidden', border: '1px solid', borderColor: 'divider', bgcolor: 'grey.900', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <img
+                                    src={previews[safeIndex]?.thumbnailUrl || previews[safeIndex]?.url || ''}
+                                    alt=""
+                                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block', cursor: 'pointer' }}
+                                    onClick={() => setDrawerOpen(true)}
+                                />
+                                {previews.length > 1 && (
+                                    <>
+                                        <IconButton
+                                            size="small"
+                                            disabled={safeIndex === 0}
+                                            onClick={() => setCarouselIndex((i) => Math.max(0, i - 1))}
+                                            sx={{ position: 'absolute', left: 4, top: '50%', transform: 'translateY(-50%)', bgcolor: 'rgba(0,0,0,0.5)', color: '#fff', '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' }, '&.Mui-disabled': { opacity: 0.3, color: '#fff' } }}
+                                        >
+                                            <ChevronLeftIcon />
+                                        </IconButton>
+                                        <IconButton
+                                            size="small"
+                                            disabled={safeIndex >= previews.length - 1}
+                                            onClick={() => setCarouselIndex((i) => Math.min(previews.length - 1, i + 1))}
+                                            sx={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', bgcolor: 'rgba(0,0,0,0.5)', color: '#fff', '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' }, '&.Mui-disabled': { opacity: 0.3, color: '#fff' } }}
+                                        >
+                                            <ChevronRightIcon />
+                                        </IconButton>
+                                        <Typography
+                                            variant="caption"
+                                            sx={{ position: 'absolute', bottom: 4, right: 8, bgcolor: 'rgba(0,0,0,0.5)', color: '#fff', px: 1, py: 0.25, borderRadius: 1 }}
+                                        >
+                                            {safeIndex + 1} / {previews.length}
+                                        </Typography>
+                                    </>
+                                )}
                             </Box>
-                        )}
-
+                            <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<CollectionsIcon />}
+                                onClick={() => setDrawerOpen(true)}
+                                sx={{ mt: 1 }}
+                            >
+                                {translate('psyched.media.manage_gallery')}
+                            </Button>
+                        </Box>
+                    ) : (
                         <Button
                             variant="outlined"
                             size="small"
                             startIcon={<CollectionsIcon />}
                             onClick={() => setDrawerOpen(true)}
                         >
-                            {iris.length > 0
-                                ? `${translate('psyched.media.manage_gallery')} (${iris.length})`
-                                : translate('psyched.media.add_images')}
+                            {translate('psyched.media.add_images')}
                         </Button>
-                    </Box>
+                    )}
 
                     {/* Drawer: full gallery management */}
                     <Drawer

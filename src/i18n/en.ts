@@ -13,6 +13,7 @@ export const enMessages = {
             replace: 'Replace',
             remove: 'Remove',
             alt_text: 'Alt text',
+            credits: 'Credits',
             title: 'Title',
             description: 'Description',
             filename: 'Filename',

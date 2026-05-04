@@ -13,6 +13,7 @@ export const frMessages = {
             replace: 'Remplacer',
             remove: 'Supprimer',
             alt_text: 'Texte alternatif',
+            credits: 'Crédits',
             title: 'Titre',
             description: 'Description',
             filename: 'Nom du fichier',

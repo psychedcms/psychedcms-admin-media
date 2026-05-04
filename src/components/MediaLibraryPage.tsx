@@ -469,6 +469,10 @@ export function MediaLibraryPage() {
                                     <TextField label={t('psyched.media.alt_text')} defaultValue={selectedMedia.altText ?? ''}
                                         onBlur={(e) => handleMetadataUpdate('altText', e.target.value)} sx={{ mb: 1 }} />
                                 )}
+                                {isImage(selectedMedia.mimeType) && (
+                                    <TextField label={t('psyched.media.credits')} defaultValue={selectedMedia.credits ?? ''}
+                                        onBlur={(e) => handleMetadataUpdate('credits', e.target.value)} sx={{ mb: 1 }} />
+                                )}
                                 <TextField label={t('psyched.media.title')} defaultValue={selectedMedia.title ?? ''}
                                     onBlur={(e) => handleMetadataUpdate('title', e.target.value)} sx={{ mb: 1 }} />
                                 <TextField label={t('psyched.media.description')} defaultValue={selectedMedia.description ?? ''}
